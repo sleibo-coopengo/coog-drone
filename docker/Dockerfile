@@ -1,5 +1,4 @@
 FROM alpine:3.8
-MAINTAINER Coopengo <support@coopengo.com>
 
 RUN apk add --no-cache \
         bash git python3 redis graphviz libmagic \

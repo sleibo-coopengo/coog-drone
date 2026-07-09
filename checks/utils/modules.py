@@ -5,6 +5,7 @@ import argparse
 import os
 import requests
 import sys
+import importlib
 
 REPO = os.environ['DRONE_REPO_NAME']
 PR = os.environ['DRONE_PULL_REQUEST']
@@ -38,6 +39,28 @@ def get_gh_files():
     return files
 
 
+def parse_pr_body(body):
+    # Retrieve PR body 
+    check_meta = importlib.import_module("check-meta")
+    check_meta.set_gh_pull()
+    result = dict()
+    lines = body.splitlines()
+    for line in lines:
+        if not line.startswith('&drone'):
+            continue
+        (_, command, *params) = line.split()
+        match command:
+            case "test_modules":
+                result["modules"] = params
+                print("modules_to_test: {" ".join(params)}")
+            case "skip_modules":
+                result["skip_modules"] = params
+                print("modules_to_skip: {" ".join(params)}")
+            case _:
+                result['errors'] = "Unknown command : {line}"
+    return result
+
+                
 def main(args):
     files = [x['filename'] for x in get_gh_files()]
 
@@ -48,7 +71,11 @@ def main(args):
             if args.skip_if_only_doc and s[2] == 'doc':
                 continue
             modules.append(s[1])
-    modules = set(modules)
+
+    result = parse_pr_body(gh_pull['body'])
+    modules.extend(result['modules'])
+    modules_to_skip = set(result["skip_modules"])
+    modules = set(modules) - modules_to_skip
     for m in modules:
         print(m)
 
