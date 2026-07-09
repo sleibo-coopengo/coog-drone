@@ -43,7 +43,10 @@ def parse_pr_body(body):
     # Retrieve PR body 
     check_meta = importlib.import_module("check-meta")
     check_meta.set_gh_pull()
-    result = dict()
+    result = {
+            "modules": [],
+            "skip_modules": [],
+            }
     lines = body.splitlines()
     for line in lines:
         if not line.startswith('&drone'):
